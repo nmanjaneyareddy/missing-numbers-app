@@ -3,13 +3,12 @@ import pandas as pd
 import io
 import re
 
-# Title
 st.title("📊 Missing Numbers and Duplicate Checker")
+st.markdown("**Developed by: Dr. Anjaneya Reddy, IGIDR, Mumbai**")
+st.markdown("More details @ [GitHub](https://github.com/nmanjaneyareddy)")
 
-# Instructions
 st.write("Upload an Excel file (.xlsx) with data in 'Sheet1' to check for missing and duplicate numbers.")
 
-# File uploader
 uploaded_file = st.file_uploader("Choose an Excel file", type=["xlsx"])
 
 def extract_numbers_with_prefix(value):
@@ -28,13 +27,15 @@ def process_file(file):
         scanned_numbers = data[0].map(extract_numbers_with_prefix).dropna().tolist()
 
         categorized_numbers = {}
+        total_missing_count = 0  # ✅ Track total missing numbers
+        output_data = []
+
         for num in scanned_numbers:
             match = re.match(r'(\D*)(\d+)', num)
             prefix = match.group(1) if match else "No Prefix"
             categorized_numbers.setdefault(prefix, []).append(num)
 
         results = {}
-        output_data = []
 
         for prefix, numbers in categorized_numbers.items():
             duplicates = sorted(set(x for x in numbers if numbers.count(x) > 1))
@@ -43,6 +44,9 @@ def process_file(file):
             start_number, end_number = numeric_values[0], numeric_values[-1]
             total_range = set(range(start_number, end_number + 1))
             missing_numbers = sorted(total_range - set(numeric_values))
+
+            # ✅ Add to total missing count
+            total_missing_count += len(missing_numbers)
 
             results[prefix] = {
                 "Missing Numbers": [f"{prefix}{mn}" for mn in missing_numbers],
@@ -56,13 +60,13 @@ def process_file(file):
 
         output_df = pd.DataFrame(output_data, columns=["Category", "Start Number", "End Number", "Number", "Status"])
 
-        return output_df, results
+        return output_df, results, total_missing_count  # ✅ Return total missing count
     except Exception as e:
         st.error(f"Error processing file: {e}")
-        return None, None
+        return None, None, 0
 
 if uploaded_file:
-    output_df, results = process_file(uploaded_file)
+    output_df, results, total_missing = process_file(uploaded_file)
 
     if output_df is not None:
         st.success("✅ File processed successfully!")
@@ -73,14 +77,22 @@ if uploaded_file:
             st.write(f"🔢 Missing Numbers: {', '.join(res['Missing Numbers']) if res['Missing Numbers'] else 'None'}")
             st.write(f"🔁 Duplicates: {', '.join(res['Duplicates']) if res['Duplicates'] else 'None'}")
 
+        # ✅ Display the total missing count
+        st.markdown(f"### 📊 **Total Missing Numbers: {total_missing}**")
+
+        # Download button with buffer
         buffer = io.BytesIO()
         output_df.to_excel(buffer, index=False, engine='openpyxl')
-        buffer.seek(0)  # Move the pointer to the start of the buffer
-        
-        # Download button
+        buffer.seek(0)
+
         st.download_button(
             label="📥 Download Report as Excel",
             data=buffer,
             file_name="missing_numbers_report.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
+# ✅ Footer Section
+st.markdown("---")
+st.markdown("**Developed by: Dr. Anjaneya Reddy, IGIDR, Mumbai**")
+st.markdown("More details @ [GitHub](https://github.com/nmanjaneyareddy)")
