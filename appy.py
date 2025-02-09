@@ -5,7 +5,7 @@ import re
 
 st.title("📊 Missing Numbers and Duplicate Checker")
 st.markdown("**Developed by: Dr. Anjaneya Reddy, IGIDR, Mumbai**")
-st.markdown("More details @ [GitHub](https://github.com/nmanjaneyareddy)")
+st.markdown("Follow me on [GitHub](https://github.com/nmanjaneyareddy)")
 
 st.write("Upload an Excel file (.xlsx) with data in 'Sheet1' to check for missing and duplicate numbers.")
 
@@ -95,4 +95,4 @@ if uploaded_file:
 # ✅ Footer Section
 st.markdown("---")
 st.markdown("**Developed by: Dr. Anjaneya Reddy, IGIDR, Mumbai**")
-st.markdown("More details @ [GitHub](https://github.com/nmanjaneyareddy)")
+st.markdown("Follow me on [GitHub](https://github.com/nmanjaneyareddy)")
