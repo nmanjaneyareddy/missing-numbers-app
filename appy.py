@@ -50,7 +50,8 @@ def process_file(file):
 
             results[prefix] = {
                 "Missing Numbers": [f"{prefix}{mn}" for mn in missing_numbers],
-                "Duplicates": duplicates
+                "Duplicates": duplicates,
+                "Given Range": (start_number, end_number)  # ✅ Add Given Range
             }
 
             for mn in missing_numbers:
@@ -74,6 +75,7 @@ if uploaded_file:
 
         for prefix, res in results.items():
             st.subheader(f"Category: {prefix if prefix else 'No Prefix'}")
+            st.write(f"📏 **Given Range:** {res['Given Range']}")  # ✅ Display Given Range
             st.write(f"🔢 Missing Numbers: {', '.join(res['Missing Numbers']) if res['Missing Numbers'] else 'None'}")
             st.write(f"🔁 Duplicates: {', '.join(res['Duplicates']) if res['Duplicates'] else 'None'}")
 
