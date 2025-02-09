@@ -70,7 +70,7 @@ if uploaded_file:
 
     if output_df is not None:
         st.success("✅ File processed successfully!")
-        st.write("### Results")
+        st.write("### Report")
 
         for prefix, res in results.items():
             st.subheader(f"Category: {prefix if prefix else 'No Prefix'}")
