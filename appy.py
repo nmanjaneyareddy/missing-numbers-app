@@ -73,9 +73,14 @@ if uploaded_file:
             st.write(f"🔢 Missing Numbers: {', '.join(res['Missing Numbers']) if res['Missing Numbers'] else 'None'}")
             st.write(f"🔁 Duplicates: {', '.join(res['Duplicates']) if res['Duplicates'] else 'None'}")
 
+        buffer = io.BytesIO()
+        output_df.to_excel(buffer, index=False, engine='openpyxl')
+        buffer.seek(0)  # Move the pointer to the start of the buffer
+        
+        # Download button
         st.download_button(
             label="📥 Download Report as Excel",
-            data=output_df.to_excel(index=False),
+            data=buffer,
             file_name="missing_numbers_report.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
