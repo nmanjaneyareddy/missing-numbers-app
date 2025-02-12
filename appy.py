@@ -54,7 +54,8 @@ def process_file(file):
             results[prefix] = {
                 "Missing Numbers": [f"{prefix}{str(mn).zfill(num_length)}" for mn in missing_numbers],
                 "Duplicates": duplicates,
-                "Given Range": (start_number, end_number)  # ✅ Add Given Range
+                "Given Range": (start_number, end_number),  # ✅ Add Given Range
+                "Missing Count": len(missing_numbers)       # ✅ Add Missing Count for each category
             }
 
             for mn in missing_numbers:
@@ -81,6 +82,7 @@ if uploaded_file:
             st.write(f"📏 **Given Range:** {res['Given Range']}")  # ✅ Display Given Range
             st.write(f"🔢 Missing Numbers: {', '.join(res['Missing Numbers']) if res['Missing Numbers'] else 'None'}")
             st.write(f"🔁 Duplicates: {', '.join(res['Duplicates']) if res['Duplicates'] else 'None'}")
+            st.write(f"❗ **Total Missing in {prefix if prefix else 'No Prefix'}: {res['Missing Count']}**")  # ✅ Display Missing Count per Category
 
         # ✅ Display the total missing count
         st.markdown(f"### 📊 **Total Missing Numbers: {total_missing}**")
