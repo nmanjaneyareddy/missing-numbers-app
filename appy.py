@@ -18,7 +18,7 @@ def extract_numbers_with_prefix(value):
         match = re.match(r'(\D*)(\d+)', value)
         if match:
             prefix, number = match.groups()
-            return f"{prefix}{int(number)}"
+            return f"{prefix}{number.zfill(len(number))}"  # Preserve leading zeros
     return None
 
 def process_file(file):
@@ -48,14 +48,17 @@ def process_file(file):
             # ✅ Add to total missing count
             total_missing_count += len(missing_numbers)
 
+            # Preserve leading zeros based on the length of the first number
+            num_length = len(re.search(r'\d+', numbers[0]).group()) if numbers else 0
+
             results[prefix] = {
-                "Missing Numbers": [f"{prefix}{mn}" for mn in missing_numbers],
+                "Missing Numbers": [f"{prefix}{str(mn).zfill(num_length)}" for mn in missing_numbers],
                 "Duplicates": duplicates,
                 "Given Range": (start_number, end_number)  # ✅ Add Given Range
             }
 
             for mn in missing_numbers:
-                output_data.append([prefix, start_number, end_number, f"{prefix}{mn}", "Missing"])
+                output_data.append([prefix, start_number, end_number, f"{prefix}{str(mn).zfill(num_length)}", "Missing"])
             for dn in duplicates:
                 output_data.append([prefix, start_number, end_number, dn, "Duplicate"])
 
