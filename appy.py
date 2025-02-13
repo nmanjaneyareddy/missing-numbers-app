@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 import re
-from streamlit_star_rating import st_star_rating
+
 
 st.title("📊 Missing Numbers and Duplicate Checker")
 st.markdown("**Developed by: Dr. Anjaneya Reddy, IGIDR, Mumbai**")
@@ -106,12 +106,3 @@ if uploaded_file:
 st.markdown("---")
 st.markdown("**Developed by: Dr. Anjaneya Reddy, IGIDR, Mumbai**")
 st.markdown("Follow me on [GitHub](https://github.com/nmanjaneyareddy)")
-
-
-
-# User Rating Feature
-st.subheader("Rate This Application")
-# Interactive star rating
-rating = st_star_rating("Please rate your experience:", max_stars=5, default=0, key="star_rating")
-if st.button("Submit Rating"):
-    st.success(f"Thank you for rating this application {rating} stars!")
