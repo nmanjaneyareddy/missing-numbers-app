@@ -8,7 +8,7 @@ st.title("📊 Missing Numbers and Duplicate Checker")
 st.markdown("**Developed by: Dr. Anjaneya Reddy, IGIDR, Mumbai**")
 st.markdown("Follow me on [GitHub](https://github.com/nmanjaneyareddy)")
 
-st.write("Upload an Excel file (.xlsx) with data in 'Sheet1' to check for missing and duplicate numbers.")
+st.write("Upload an **Excel file (.xlsx)** with data (acession numbers/barcode numbers) in **'Sheet1'** in the **First column** to check for missing and duplicate numbers.")
 
 uploaded_file = st.file_uploader("Choose an Excel file", type=["xlsx"])
 
