@@ -104,8 +104,9 @@ if uploaded_file:
 
 # ✅ Footer Section
 st.markdown("---")
+st.markdown("---")
 st.markdown("**Developed by:** Dr. Anjaneya Reddy, IGIDR, Mumbai")
 st.markdown("Follow me on [GitHub](https://github.com/nmanjaneyareddy)")
-st.markdown("**Acknowledgments:**")
-st.markdown("Dr. Shamprasad M. Pujar, Chief Librarian, IGIDR, Mumbai")
-st.markdown("Dr. Prakash I.N., Librarian, Alliance University, Bengaluru")
+st.markdown("---")
+st.markdown("**Acknowledgements:**")
+st.markdown("I sincerely acknowledge Dr. Shamprasad M. Pujar, Chief Librarian, IGIDR, Mumbai, and Dr. Prakash I.N., Librarian, Alliance University, Bengaluru, for their valuable inputs/suggestions.")
