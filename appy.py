@@ -105,6 +105,6 @@ if uploaded_file:
 # ✅ Footer Section
 st.markdown("")
 st.markdown("")
-st.markdown("")
+st.markdown("---")
 st.markdown("**Acknowledgements:**")
 st.markdown("I sincerely acknowledge Dr. Shamprasad M. Pujar, Chief Librarian, IGIDR, Mumbai, and Dr. Prakash I.N., Librarian, Alliance University, Bengaluru, for their valuable inputs/suggestions.")
