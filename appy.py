@@ -5,7 +5,7 @@ import re
 
 
 st.title("📊 Missing Numbers and Duplicate Checker")
-st.markdown("**Developed by: Dr. Anjaneya Reddy, IGIDR, Mumbai**")
+st.markdown("**Developed by: Dr. Anjaneya Reddy, Assistant Librarian, IGIDR, Mumbai**")
 st.markdown("Follow me on [GitHub](https://github.com/nmanjaneyareddy)")
 
 st.write("Upload an **Excel file (.xlsx)** with data (accession numbers/barcode numbers) in **'Sheet1'** in the **First column** to check for missing and duplicate numbers.")
