@@ -6,7 +6,7 @@ import re
 
 st.title("📊 Missing Numbers and Duplicate Checker")
 st.markdown("**Developed by: Dr. Anjaneya Reddy, Assistant Librarian, IGIDR, Mumbai**")
-st.markdown("**Follow me on [GitHub]**(https://github.com/nmanjaneyareddy)")
+st.markdown("**Follow me on** [GitHub](https://github.com/nmanjaneyareddy)")
 st.markdown("🛠️ **KeyFeatures:**")
 st.markdown("✅ Upload an Excel file with your accession numbers") 
 st.markdown("✅ Instantly detect missing and duplicate numbers") 
