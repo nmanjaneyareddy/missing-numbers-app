@@ -6,7 +6,13 @@ import re
 
 st.title("📊 Missing Numbers and Duplicate Checker")
 st.markdown("**Developed by: Dr. Anjaneya Reddy, Assistant Librarian, IGIDR, Mumbai**")
-st.markdown("Follow me on [GitHub](https://github.com/nmanjaneyareddy)")
+st.markdown("**Follow me on [GitHub]**(https://github.com/nmanjaneyareddy)")
+st.markdown("🛠️ **KeyFeatures:**")
+st.markdown("✅ Upload an Excel file with your accession numbers") 
+st.markdown("✅ Instantly detect missing and duplicate numbers") 
+st.markdown("✅ Prefix Detection and creates categories of missing")
+st.markdown("✅ Leading Zeros preservation")
+st.markdown("✅ Get a detailed report with easy download options")
 
 st.write("Upload an **Excel file (.xlsx)** with data (accession numbers/barcode numbers) in **'Sheet1'** in the **First column** to check for missing and duplicate numbers.")
 
