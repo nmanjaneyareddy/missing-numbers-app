@@ -14,7 +14,7 @@ st.markdown("✅ Prefix Detection and creates categories of missing")
 st.markdown("✅ Leading Zeros preservation")
 st.markdown("✅ Get a detailed report with easy download options")
 
-st.write("Upload an **Excel file (.xlsx)** with data (accession numbers/barcode numbers) in **'Sheet1'** in the **First column** to check for missing and duplicate numbers.")
+st.write("**NOTE:** Upload an **Excel file (.xlsx)** with data (accession numbers/barcode numbers) in **'Sheet1'** in the **First column** to check for missing and duplicate numbers.")
 
 uploaded_file = st.file_uploader("Choose an Excel file", type=["xlsx"])
 
