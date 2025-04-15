@@ -3,7 +3,7 @@ import pandas as pd
 import io
 import re
 
-
+st.set_page_config(page_title="Missing/Duplicate Checker", page_icon="")
 st.title("📊 Missing Numbers and Duplicate Checker")
 st.markdown("**Developed by: Dr. Anjaneya Reddy, Assistant Librarian, IGIDR, Mumbai**")
 st.markdown("**Follow me on** [GitHub](https://github.com/nmanjaneyareddy)")
