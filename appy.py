@@ -164,4 +164,4 @@ st.markdown(
     "and **Dr. Prakash I.N.**, Librarian, Alliance University, Bengaluru, for their valuable inputs/suggestions."
 )
 st.markdown("---")
-st.markdown("**If you encounter any issues** with the app, please write to me at: areddy@igidr.ac.in")
+st.markdown("**If you encounter any issues** with the app, please write to me at: areddy.ragini@gmail.com")
