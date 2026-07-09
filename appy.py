@@ -5,7 +5,7 @@ import re
 
 st.set_page_config(page_title="Missing/Duplicate Checker", page_icon="")
 st.title("📊 Missing Numbers and Duplicate Checker")
-st.markdown("**Developed by: Dr. Anjaneya Reddy, Assistant Librarian, IGIDR, Mumbai**")
+st.markdown("**Developed by: Dr. Anjaneya Reddy, Deputy Librarian, IIMB, Bengaluru**")
 st.markdown("**Follow me on** [GitHub](https://github.com/nmanjaneyareddy)")
 st.markdown("🛠️ **KeyFeatures:**")
 st.markdown("✅ Upload an Excel file with your accession numbers") 
