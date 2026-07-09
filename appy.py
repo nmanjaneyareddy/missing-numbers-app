@@ -2,127 +2,80 @@ import streamlit as st
 import pandas as pd
 import io
 import re
-from collections import Counter
 
-st.set_page_config(page_title="Missing/Duplicate Checker", page_icon="📊")
+st.set_page_config(page_title="Missing/Duplicate Checker", page_icon="")
 st.title("📊 Missing Numbers and Duplicate Checker")
 st.markdown("**Developed by: Dr. Anjaneya Reddy, Deputy Librarian, IIMB, Bengaluru**")
 st.markdown("**Follow me on** [GitHub](https://github.com/nmanjaneyareddy)")
-st.markdown("🛠️ **Key Features:**")
-st.markdown("✅ Upload an Excel file with your accession numbers")
-st.markdown("✅ Instantly detect missing and duplicate numbers")
-st.markdown("✅ Prefix detection and category-wise missing-number report")
-st.markdown("✅ Leading zero preservation")
-st.markdown("✅ Download a detailed Excel report")
+st.markdown("🛠️ **KeyFeatures:**")
+st.markdown("✅ Upload an Excel file with your accession numbers") 
+st.markdown("✅ Instantly detect missing and duplicate numbers") 
+st.markdown("✅ Prefix Detection and creates categories of missing")
+st.markdown("✅ Leading Zeros preservation")
+st.markdown("✅ Get a detailed report with easy download options")
 
-st.write(
-    "**NOTE:** Upload an **Excel file (.xlsx)** with data accession numbers/barcode numbers "
-    "in **Sheet1** in the **first column** to check for missing and duplicate numbers."
-)
+st.write("**NOTE:** Upload an **Excel file (.xlsx)** with data (accession numbers/barcode numbers) in **'Sheet1'** in the **First column** to check for missing and duplicate numbers.")
 
 uploaded_file = st.file_uploader("Choose an Excel file", type=["xlsx"])
 
-
-def extract_accession(value):
-    """Return prefix, numeric integer, numeric text, and normalized value."""
-    if pd.isna(value):
-        return None
-
-    value_text = str(value).strip()
-
-    # Handle Excel cells read as floats, e.g. 123.0
-    if re.fullmatch(r"\d+\.0", value_text):
-        value_text = value_text[:-2]
-
-    match = re.fullmatch(r"([^0-9]*)(\d+)(.*)", value_text)
-    if not match:
-        return None
-
-    prefix, number_text, suffix = match.groups()
-
-    # Ignore values where text appears after the number, because the original app supports prefix + number only.
-    if suffix.strip():
-        return None
-
-    normalized = prefix + number_text
-    return {
-        "prefix": prefix,
-        "number": int(number_text),
-        "number_text": number_text,
-        "normalized": normalized,
-    }
-
+def extract_numbers_with_prefix(value):
+    if isinstance(value, (int, float)):
+        return str(int(value)) if not pd.isna(value) else None
+    elif isinstance(value, str):
+        match = re.match(r'(\D*)(\d+)', value)
+        if match:
+            prefix, number = match.groups()
+            return f"{prefix}{number.zfill(len(number))}"  # Preserve leading zeros
+    return None
 
 def process_file(file):
     try:
-        data = pd.read_excel(file, sheet_name="Sheet1", header=None, usecols=[0], dtype=str)
-        parsed_rows = data[0].map(extract_accession).dropna().tolist()
-
-        if not parsed_rows:
-            st.warning("No valid accession numbers were found in the first column of Sheet1.")
-            return pd.DataFrame(), {}, 0
+        data = pd.read_excel(file, sheet_name='Sheet1', header=None, usecols=[0])
+        scanned_numbers = data[0].map(extract_numbers_with_prefix).dropna().tolist()
 
         categorized_numbers = {}
-        for row in parsed_rows:
-            categorized_numbers.setdefault(row["prefix"], []).append(row)
+        total_missing_count = 0  # ✅ Track total missing numbers
+        output_data = []
+
+        for num in scanned_numbers:
+            match = re.match(r'(\D*)(\d+)', num)
+            prefix = match.group(1) if match else "No Prefix"
+            categorized_numbers.setdefault(prefix, []).append(num)
 
         results = {}
-        output_data = []
-        total_missing_count = 0
 
-        for prefix, rows in categorized_numbers.items():
-            normalized_values = [row["normalized"] for row in rows]
-            numeric_values = [row["number"] for row in rows]
-            number_width = max(len(row["number_text"]) for row in rows)
+        for prefix, numbers in categorized_numbers.items():
+            duplicates = sorted(set(x for x in numbers if numbers.count(x) > 1))
+            numeric_values = sorted(set(int(re.search(r'\d+', x).group()) for x in numbers if re.search(r'\d+', x)))
 
-            duplicate_counts = Counter(normalized_values)
-            duplicates = sorted([value for value, count in duplicate_counts.items() if count > 1])
+            start_number, end_number = numeric_values[0], numeric_values[-1]
+            total_range = set(range(start_number, end_number + 1))
+            missing_numbers = sorted(total_range - set(numeric_values))
 
-            start_number = min(numeric_values)
-            end_number = max(numeric_values)
-            existing_numbers = set(numeric_values)
-            missing_numbers = [num for num in range(start_number, end_number + 1) if num not in existing_numbers]
-            formatted_missing = [prefix + str(num).zfill(number_width) for num in missing_numbers]
-
+            # ✅ Add to total missing count
             total_missing_count += len(missing_numbers)
 
+            # Preserve leading zeros based on the length of the first number
+            num_length = len(re.search(r'\d+', numbers[0]).group()) if numbers else 0
+
             results[prefix] = {
-                "Missing Numbers": formatted_missing,
+                "Missing Numbers": [f"{prefix}{str(mn).zfill(num_length)}" for mn in missing_numbers],
                 "Duplicates": duplicates,
-                "Given Range": (prefix + str(start_number).zfill(number_width), prefix + str(end_number).zfill(number_width)),
-                "Missing Count": len(missing_numbers),
+                "Given Range": (start_number, end_number),  # ✅ Add Given Range
+                "Missing Count": len(missing_numbers)       # ✅ Add Missing Count for each category
             }
 
-            for missing_value in formatted_missing:
-                output_data.append([
-                    prefix if prefix else "No Prefix",
-                    prefix + str(start_number).zfill(number_width),
-                    prefix + str(end_number).zfill(number_width),
-                    missing_value,
-                    "Missing",
-                ])
-
-            for duplicate_value in duplicates:
-                output_data.append([
-                    prefix if prefix else "No Prefix",
-                    prefix + str(start_number).zfill(number_width),
-                    prefix + str(end_number).zfill(number_width),
-                    duplicate_value,
-                    "Duplicate",
-                ])
+            for mn in missing_numbers:
+                output_data.append([prefix, start_number, end_number, f"{prefix}{str(mn).zfill(num_length)}", "Missing"])
+            for dn in duplicates:
+                output_data.append([prefix, start_number, end_number, dn, "Duplicate"])
 
         output_df = pd.DataFrame(output_data, columns=["Category", "Start Number", "End Number", "Number", "Status"])
-        return output_df, results, total_missing_count
 
-    except ValueError as exc:
-        st.error("Could not read Sheet1 first column. Please check that the file contains a sheet named Sheet1.")
-        st.exception(exc)
+        return output_df, results, total_missing_count  # ✅ Return total missing count
+    except Exception as e:
+        st.error(f"Error processing file: {e}")
         return None, None, 0
-    except Exception as exc:
-        st.error("Error processing file.")
-        st.exception(exc)
-        return None, None, 0
-
 
 if uploaded_file:
     output_df, results, total_missing = process_file(uploaded_file)
@@ -132,36 +85,34 @@ if uploaded_file:
         st.write("### Report")
 
         for prefix, res in results.items():
-            category_name = prefix if prefix else "No Prefix"
-            st.subheader("Category: " + category_name)
-            st.write("📏 **Given Range:** " + str(res["Given Range"]))
-            st.write("🔢 **Missing Numbers:** " + (", ".join(res["Missing Numbers"]) if res["Missing Numbers"] else "None"))
-            st.write("🔁 **Duplicates:** " + (", ".join(res["Duplicates"]) if res["Duplicates"] else "None"))
-            st.write("❗ **Total Missing in " + category_name + ": " + str(res["Missing Count"]) + "**")
+            st.subheader(f"Category: {prefix if prefix else 'No Prefix'}")
+            st.write(f"📏 **Given Range:** {res['Given Range']}")  # ✅ Display Given Range
+            st.write(f"🔢 Missing Numbers: {', '.join(res['Missing Numbers']) if res['Missing Numbers'] else 'None'}")
+            st.write(f"🔁 Duplicates: {', '.join(res['Duplicates']) if res['Duplicates'] else 'None'}")
+            st.write(f"❗ **Total Missing in {prefix if prefix else 'No Prefix'}: {res['Missing Count']}**")  # ✅ Display Missing Count per Category
 
-        st.markdown("### 📊 **Total Missing Numbers: " + str(total_missing) + "**")
+        # ✅ Display the total missing count
+        st.markdown(f"### 📊 **Total Missing Numbers: {total_missing}**")
 
-        if not output_df.empty:
-            st.dataframe(output_df, use_container_width=True)
-
+        # Download button with buffer
         buffer = io.BytesIO()
-        output_df.to_excel(buffer, index=False, engine="openpyxl")
+        output_df.to_excel(buffer, index=False, engine='openpyxl')
         buffer.seek(0)
 
         st.download_button(
             label="📥 Download Report as Excel",
             data=buffer,
             file_name="missing_numbers_report.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
+
+
+# ✅ Footer Section
 st.markdown("")
 st.markdown("")
 st.markdown("---")
 st.markdown("**Acknowledgements:**")
-st.markdown(
-    "I sincerely acknowledge **Dr. Shamprasad M. Pujar**, Chief Librarian, IGIDR, Mumbai, "
-    "and **Dr. Prakash I.N.**, Librarian, Alliance University, Bengaluru, for their valuable inputs/suggestions."
-)
+st.markdown("I sincerely acknowledge **Dr. Shamprasad M. Pujar**, Chief Librarian, IGIDR, Mumbai, and **Dr. Prakash I.N.**, Librarian, Alliance University, Bengaluru, for their valuable inputs/suggestions.")
 st.markdown("---")
-st.markdown("**If you encounter any issues** with the app, please write to me at: areddy.ragini@gmail.com")
+st.markdown("**If you encounter any issues** with the app, please write to me at: areddy@igidr.ac.in")
