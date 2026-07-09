@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 import re
+from collections import Counter  # Added for ultra-fast duplicate checking
 
 st.set_page_config(page_title="Missing/Duplicate Checker", page_icon="")
 st.title("📊 Missing Numbers and Duplicate Checker")
@@ -30,11 +31,12 @@ def extract_numbers_with_prefix(value):
 
 def process_file(file):
     try:
-        data = pd.read_excel(file, sheet_name='Sheet1', header=None, usecols=[0])
+        # Optimization: engine='openpyxl' helps with larger xlsx files
+        data = pd.read_excel(file, sheet_name='Sheet1', header=None, usecols=[0], engine='openpyxl')
         scanned_numbers = data[0].map(extract_numbers_with_prefix).dropna().tolist()
 
         categorized_numbers = {}
-        total_missing_count = 0  # ✅ Track total missing numbers
+        total_missing_count = 0  
         output_data = []
 
         for num in scanned_numbers:
@@ -45,14 +47,19 @@ def process_file(file):
         results = {}
 
         for prefix, numbers in categorized_numbers.items():
-            duplicates = sorted(set(x for x in numbers if numbers.count(x) > 1))
+            # 🔥 OPTIMIZED: Uses Counter for O(N) performance instead of O(N^2) .count()
+            counts = Counter(numbers)
+            duplicates = sorted([x for x, count in counts.items() if count > 1])
+            
             numeric_values = sorted(set(int(re.search(r'\d+', x).group()) for x in numbers if re.search(r'\d+', x)))
+
+            if not numeric_values:
+                continue
 
             start_number, end_number = numeric_values[0], numeric_values[-1]
             total_range = set(range(start_number, end_number + 1))
             missing_numbers = sorted(total_range - set(numeric_values))
 
-            # ✅ Add to total missing count
             total_missing_count += len(missing_numbers)
 
             # Preserve leading zeros based on the length of the first number
@@ -61,8 +68,8 @@ def process_file(file):
             results[prefix] = {
                 "Missing Numbers": [f"{prefix}{str(mn).zfill(num_length)}" for mn in missing_numbers],
                 "Duplicates": duplicates,
-                "Given Range": (start_number, end_number),  # ✅ Add Given Range
-                "Missing Count": len(missing_numbers)       # ✅ Add Missing Count for each category
+                "Given Range": (start_number, end_number),  
+                "Missing Count": len(missing_numbers)       
             }
 
             for mn in missing_numbers:
@@ -72,7 +79,7 @@ def process_file(file):
 
         output_df = pd.DataFrame(output_data, columns=["Category", "Start Number", "End Number", "Number", "Status"])
 
-        return output_df, results, total_missing_count  # ✅ Return total missing count
+        return output_df, results, total_missing_count  
     except Exception as e:
         st.error(f"Error processing file: {e}")
         return None, None, 0
@@ -86,12 +93,11 @@ if uploaded_file:
 
         for prefix, res in results.items():
             st.subheader(f"Category: {prefix if prefix else 'No Prefix'}")
-            st.write(f"📏 **Given Range:** {res['Given Range']}")  # ✅ Display Given Range
+            st.write(f"📏 **Given Range:** {res['Given Range']}")  
             st.write(f"🔢 Missing Numbers: {', '.join(res['Missing Numbers']) if res['Missing Numbers'] else 'None'}")
             st.write(f"🔁 Duplicates: {', '.join(res['Duplicates']) if res['Duplicates'] else 'None'}")
-            st.write(f"❗ **Total Missing in {prefix if prefix else 'No Prefix'}: {res['Missing Count']}**")  # ✅ Display Missing Count per Category
+            st.write(f"❗ **Total Missing in {prefix if prefix else 'No Prefix'}: {res['Missing Count']}**")  
 
-        # ✅ Display the total missing count
         st.markdown(f"### 📊 **Total Missing Numbers: {total_missing}**")
 
         # Download button with buffer
@@ -105,8 +111,6 @@ if uploaded_file:
             file_name="missing_numbers_report.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-
-
 
 # ✅ Footer Section
 st.markdown("")
