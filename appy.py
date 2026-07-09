@@ -2,153 +2,117 @@ import streamlit as st
 import pandas as pd
 import io
 import re
-from collections import Counter
 
-st.set_page_config(page_title="High-Scale CSV Checker", page_icon="📊", layout="wide")
-st.title("📊 Ultra-Scale Missing & Duplicate Checker (300k+ Rows)")
+st.set_page_config(page_title="Missing/Duplicate Checker", page_icon="")
+st.title("📊 Missing Numbers and Duplicate Checker")
 st.markdown("**Developed by: Dr. Anjaneya Reddy, Deputy Librarian, IIMB, Bengaluru**")
+st.markdown("**Follow me on** [GitHub](https://github.com/nmanjaneyareddy)")
+st.markdown("🛠️ **KeyFeatures:**")
+st.markdown("✅ Upload an Excel file with your accession numbers") 
+st.markdown("✅ Instantly detect missing and duplicate numbers") 
+st.markdown("✅ Prefix Detection and creates categories of missing")
+st.markdown("✅ Leading Zeros preservation")
+st.markdown("✅ Get a detailed report with easy download options")
 
-# Update instructions for the user
-st.info("💡 **For 3,00,000+ rows:** Please save your Excel file as a **CSV (.csv)** file before uploading. This bypasses the memory limits of cloud servers.")
+st.write("**NOTE:** Upload an **Excel file (.xlsx)** with data (accession numbers/barcode numbers) in **'Sheet1'** in the **First column** to check for missing and duplicate numbers.")
 
-uploaded_file = st.file_uploader("Choose your converted CSV file", type=["csv"])
+uploaded_file = st.file_uploader("Choose an Excel file", type=["xlsx"])
 
 def extract_numbers_with_prefix(value):
-    if pd.isna(value):
-        return None
-    val_str = str(value).strip()
-    if not val_str or val_str.lower() == 'nan':
-        return None
-    match = re.match(r'(\D*)(\d+)', val_str)
-    if match:
-        return match.groups() # Returns (prefix, number_string)
+    if isinstance(value, (int, float)):
+        return str(int(value)) if not pd.isna(value) else None
+    elif isinstance(value, str):
+        match = re.match(r'(\D*)(\d+)', value)
+        if match:
+            prefix, number = match.groups()
+            return f"{prefix}{number.zfill(len(number))}"  # Preserve leading zeros
     return None
 
-def process_mega_csv(file):
+def process_file(file):
     try:
-        # Memory tracking & optimization structures
-        categorized_ints = {}
-        categorized_strings = {}
-        prefix_zero_lens = {}
-        
-        # Read file in small memory chunks (10,000 rows at a time)
-        # We specify header=None and usecols=[0] to only look at the first column
-        for chunk in pd.read_csv(file, header=None, usecols=[0], chunksize=10000, dtype=str):
-            for item in chunk[0]:
-                parsed = extract_numbers_with_prefix(item)
-                if parsed:
-                    prefix, num_str = parsed
-                    
-                    # Store original values for duplicate tracking
-                    categorized_strings.setdefault(prefix, []).append(f"{prefix}{num_str}")
-                    
-                    # Store pure integers for range/missing mathematical logic
-                    categorized_ints.setdefault(prefix, []).append(int(num_str))
-                    
-                    # Track leading zero format template lengths dynamically
-                    if prefix not in prefix_zero_lens:
-                        prefix_zero_lens[prefix] = len(num_str)
+        data = pd.read_excel(file, sheet_name='Sheet1', header=None, usecols=[0])
+        scanned_numbers = data[0].map(extract_numbers_with_prefix).dropna().tolist()
 
-        if not categorized_ints:
-            return None, {}, 0
+        categorized_numbers = {}
+        total_missing_count = 0  # ✅ Track total missing numbers
+        output_data = []
 
-        total_missing_count = 0
+        for num in scanned_numbers:
+            match = re.match(r'(\D*)(\d+)', num)
+            prefix = match.group(1) if match else "No Prefix"
+            categorized_numbers.setdefault(prefix, []).append(num)
+
         results = {}
-        output_summary = []
 
-        # Process statistics for each localized prefix block
-        for prefix, int_list in categorized_ints.items():
-            str_list = categorized_strings[prefix]
-            num_length = prefix_zero_lens.get(prefix, 0)
-            
-            # 1. Lightning Fast Duplicates O(N)
-            counts = Counter(str_list)
-            duplicates = sorted([x for x, count in counts.items() if count > 1])
+        for prefix, numbers in categorized_numbers.items():
+            duplicates = sorted(set(x for x in numbers if numbers.count(x) > 1))
+            numeric_values = sorted(set(int(re.search(r'\d+', x).group()) for x in numbers if re.search(r'\d+', x)))
 
-            # 2. Optimized Range Logic
-            unique_ints = sorted(set(int_list))
-            start_num, end_num = unique_ints[0], unique_ints[-1]
-            
-            # Perform direct mathematical set difference 
-            existing_set = set(unique_ints)
-            full_range_set = set(range(start_num, end_num + 1))
-            missing_ints = sorted(full_range_set - existing_set)
-            
-            missing_count = len(missing_ints)
-            total_missing_count += missing_count
+            start_number, end_number = numeric_values[0], numeric_values[-1]
+            total_range = set(range(start_number, end_number + 1))
+            missing_numbers = sorted(total_range - set(numeric_values))
 
-            # Safely build string formats for screen display up to a limit
-            missing_formatted = []
-            if missing_count <= 10000:
-                missing_formatted = [f"{prefix}{str(mn).zfill(num_length)}" for mn in missing_ints]
-            else:
-                missing_formatted = ["[Large break detected: Download summary report to inspect all numbers]"]
+            # ✅ Add to total missing count
+            total_missing_count += len(missing_numbers)
 
-            start_str = f"{prefix}{str(start_num).zfill(num_length)}"
-            end_str = f"{prefix}{str(end_num).zfill(num_length)}"
+            # Preserve leading zeros based on the length of the first number
+            num_length = len(re.search(r'\d+', numbers[0]).group()) if numbers else 0
 
             results[prefix] = {
-                "Missing Numbers": missing_formatted,
+                "Missing Numbers": [f"{prefix}{str(mn).zfill(num_length)}" for mn in missing_numbers],
                 "Duplicates": duplicates,
-                "Given Range": (start_str, end_str),
-                "Missing Count": missing_count,
-                "RawMissingInts": missing_ints
+                "Given Range": (start_number, end_number),  # ✅ Add Given Range
+                "Missing Count": len(missing_numbers)       # ✅ Add Missing Count for each category
             }
 
-            # 3. Add to Download Output Matrix
+            for mn in missing_numbers:
+                output_data.append([prefix, start_number, end_number, f"{prefix}{str(mn).zfill(num_length)}", "Missing"])
             for dn in duplicates:
-                output_summary.append([prefix, start_str, end_str, dn, "Duplicate"])
-            
-            if missing_count > 5000:
-                output_summary.append([prefix, start_str, end_str, f"Gaps identified: {missing_count:,} missing sequence IDs in this block.", "Missing Block Alert"])
-            else:
-                for mn in missing_ints:
-                    output_summary.append([prefix, start_str, end_str, f"{prefix}{str(mn).zfill(num_length)}", "Missing"])
+                output_data.append([prefix, start_number, end_number, dn, "Duplicate"])
 
-        output_df = pd.DataFrame(output_summary, columns=["Category", "Start Range", "End Range", "Identified Target", "Status"])
-        return output_df, results, total_missing_count
+        output_df = pd.DataFrame(output_data, columns=["Category", "Start Number", "End Number", "Number", "Status"])
 
+        return output_df, results, total_missing_count  # ✅ Return total missing count
     except Exception as e:
-        st.error(f"Stream Error: {e}")
-        return None, {}, 0
+        st.error(f"Error processing file: {e}")
+        return None, None, 0
 
 if uploaded_file:
-    with st.spinner("Streaming data chunks safely... keeping memory low..."):
-        output_df, results, total_missing = process_mega_csv(uploaded_file)
+    output_df, results, total_missing = process_file(uploaded_file)
 
     if output_df is not None:
-        st.success("📊 300k+ Dataset Analyzed Successfully!")
-        st.metric(label="Total Missing Items Across Dataset", value=f"{total_missing:,}")
+        st.success("✅ File processed successfully!")
+        st.write("### Report")
 
-        st.write("### 📂 Structural Breakdown")
         for prefix, res in results.items():
-            display_name = prefix if prefix != "" else "No Prefix Columns"
-            with st.expander(f"Prefix Block: '{display_name}' ({res['Missing Count']:,} Missing)", expanded=True):
-                
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.info(f"📏 **Range Boundaries:** `{res['Given Range'][0]}` to `{res['Given Range'][1]}`")
-                    st.error(f"❌ **Missing Total:** {res['Missing Count']:,} items")
-                with c2:
-                    st.warning(f"🔁 **Duplicates Found:** {len(res['Duplicates']):,}")
-                    if res['Duplicates']:
-                        st.text(", ".join(res['Duplicates'][:50]) + ("..." if len(res['Duplicates']) > 50 else ""))
-                    
-                if res['Missing Count'] > 0:
-                    st.write("**Missing Sequence Snippet Preview:**")
-                    if res['Missing Count'] > 300:
-                        st.text(", ".join(res['Missing Numbers'][:300]) + f"... [Truncated view for browser speed. Total missing here: {res['Missing Count']:,}]")
-                    else:
-                        st.text(", ".join(res['Missing Numbers']))
+            st.subheader(f"Category: {prefix if prefix else 'No Prefix'}")
+            st.write(f"📏 **Given Range:** {res['Given Range']}")  # ✅ Display Given Range
+            st.write(f"🔢 Missing Numbers: {', '.join(res['Missing Numbers']) if res['Missing Numbers'] else 'None'}")
+            st.write(f"🔁 Duplicates: {', '.join(res['Duplicates']) if res['Duplicates'] else 'None'}")
+            st.write(f"❗ **Total Missing in {prefix if prefix else 'No Prefix'}: {res['Missing Count']}**")  # ✅ Display Missing Count per Category
 
-        # Setup CSV output buffer (CSV is drastically lighter than Excel for writing logs out)
-        buffer = io.StringIO()
-        output_df.to_csv(buffer, index=False)
-        csv_data = buffer.getvalue()
+        # ✅ Display the total missing count
+        st.markdown(f"### 📊 **Total Missing Numbers: {total_missing}**")
+
+        # Download button with buffer
+        buffer = io.BytesIO()
+        output_df.to_excel(buffer, index=False, engine='openpyxl')
+        buffer.seek(0)
 
         st.download_button(
-            label="📥 Download Diagnostics Report (.csv)",
-            data=csv_data,
-            file_name="diagnostics_report.csv",
-            mime="text/csv"
+            label="📥 Download Report as Excel",
+            data=buffer,
+            file_name="missing_numbers_report.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
+
+
+# ✅ Footer Section
+st.markdown("")
+st.markdown("")
+st.markdown("---")
+st.markdown("**Acknowledgements:**")
+st.markdown("I sincerely acknowledge **Dr. Shamprasad M. Pujar**, Chief Librarian, IGIDR, Mumbai, and **Dr. Prakash I.N.**, Librarian, Alliance University, Bengaluru, for their valuable inputs/suggestions.")
+st.markdown("---")
+st.markdown("**If you encounter any issues** with the app, please write to me at: areddy@igidr.ac.in")
